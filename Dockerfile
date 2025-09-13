@@ -1,3 +1,5 @@
+ARG user=appuser
+ARG uid=1000
 # main image
 FROM php:8.3-apache
 
