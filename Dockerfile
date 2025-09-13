@@ -1,9 +1,14 @@
 ARG user=appuser
 ARG uid=1000
+ARG container_project_path=/var/www/html
 
+ENV user=${user}
+ENV uid=${uid}
+ENV container_project_path=${container_project_path}
+
+RUN useradd -G www-data,root -u ${uid} -d /home/${user} ${user}
 RUN chmod -R 775 ${container_project_path}
 RUN chown -R ${user}:www-data ${container_project_path}
-
 
 # main image
 FROM php:8.3-apache
