@@ -1,3 +1,13 @@
+
+# main image
+FROM php:8.3-apache
+
+# installing main dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    ffmpeg 
+
+#Manual deployment fixes ---------------------
 ARG user=appuser
 ARG uid=1000
 ARG container_project_path=/var/www/html
@@ -10,13 +20,9 @@ RUN useradd -G www-data,root -u ${uid} -d /home/${user} ${user}
 RUN chmod -R 775 ${container_project_path}
 RUN chown -R ${user}:www-data ${container_project_path}
 
-# main image
-FROM php:8.3-apache
+#-----------------------------------------------
 
-# installing main dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    ffmpeg 
+
 
 # installing unzip dependencies
 RUN apt-get install -y \
