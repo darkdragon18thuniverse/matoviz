@@ -1,5 +1,10 @@
 ARG user=appuser
 ARG uid=1000
+
+RUN chmod -R 775 ${container_project_path}
+RUN chown -R ${user}:www-data ${container_project_path}
+
+
 # main image
 FROM php:8.3-apache
 
