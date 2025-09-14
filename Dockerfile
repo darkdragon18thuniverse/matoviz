@@ -1,13 +1,23 @@
-
 # main image
 FROM php:8.3-apache
 
 # installing main dependencies
 RUN apt-get update && apt-get install -y \
     git \
-    ffmpeg 
+    ffmpeg \
+    libzip-dev \
+    zlib1g-dev \
+    unzip \
+    libfreetype6-dev \
+    libicu-dev \
+    libgmp-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    libxpm-dev \
+    libmagickwand-dev
 
-#Manual deployment fixes ---------------------
+# Deployment arguments and environment
 ARG user=appuser
 ARG uid=1000
 ARG container_project_path=/var/www/html
@@ -16,37 +26,24 @@ ENV user=${user}
 ENV uid=${uid}
 ENV container_project_path=${container_project_path}
 
-RUN useradd -G www-data,root -u ${uid} -d /home/${user} ${user}
-RUN chmod -R 775 ${container_project_path}
-RUN chown -R ${user}:www-data ${container_project_path}
+# Create user only once!
+RUN useradd -G www-data,root -u ${uid} -d /home/${user} ${user} \
+    && mkdir -p /home/${user}/.composer \
+    && chown -R ${user}:${user} /home/${user}
 
-#-----------------------------------------------
+# Set permissions for project directory
+RUN chmod -R 775 ${container_project_path} \
+    && chown -R ${user}:www-data ${container_project_path}
 
+# GD extension configure and install
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install gd
 
-
-# installing unzip dependencies
-RUN apt-get install -y \
-    libzip-dev \
-    zlib1g-dev \
-    unzip
-
-# gd extension configure and install
-RUN apt-get install -y \
-    libfreetype6-dev \
-    libicu-dev \
-    libgmp-dev \
-    libjpeg62-turbo-dev \
-    libpng-dev \
-    libwebp-dev \
-    libxpm-dev
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && docker-php-ext-install gd
-
-# imagick extension configure and install
-RUN apt-get install -y libmagickwand-dev \
-    && pecl install imagick \
+# imagick extension install
+RUN pecl install imagick \
     && docker-php-ext-enable imagick
 
-# intl extension configure and install
+# intl extension install
 RUN docker-php-ext-configure intl && docker-php-ext-install intl
 
 # other extensions install
@@ -63,26 +60,16 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
 # installing global node dependencies
 RUN npm install -g npx
 
-# arguments
-ARG container_project_path
-ARG uid
-ARG user
-
-# adding user
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user
-
-# setting apache
+# setting Apache site config
 COPY ./.configs/apache.conf /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# setting up project from `src` folder
-RUN chmod -R 775 $container_project_path
-RUN chown -R $user:www-data $container_project_path
+# Re-apply permissions for project directory (in case COPY overwrites)
+RUN chmod -R 775 ${container_project_path} \
+    && chown -R ${user}:www-data ${container_project_path}
 
-# changing user
-USER $user
+# change to your user
+USER ${user}
 
-# setting work directory
-WORKDIR $container_project_path
+# set work directory
+WORKDIR ${container_project_path}
