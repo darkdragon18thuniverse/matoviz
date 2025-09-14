@@ -3,17 +3,16 @@ version: "3.1"
 services:
   bagisto-php-apache:
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
         uid: 1000
-        user: $USER
+        user: appuser
         container_project_path: /var/www/html/
-      context: .
-      dockerfile: ./Dockerfile
     image: bagisto-php-apache
     ports:
       - 80:80
-    volumes:
-      - ./workspace/:/var/www/html/
+    # DO NOT mount app code as volume here in production, or you will overwrite your code in the image!
 
   bagisto-mysql:
     image: mysql:8.0
@@ -76,9 +75,7 @@ services:
   bagisto-mailpit:
     image: axllent/mailpit:latest
     logging:
-        # Disable saving logs.
         driver: 'none'
     ports:
-        # SMTP server.
         - 1025:1025
         - 8025:8025
